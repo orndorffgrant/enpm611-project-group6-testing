@@ -1,4 +1,3 @@
-```markdown
 # 🧩 ENPM611 Project — GitHub Issues Analysis Platform
 
 This repository provides an analytical application template for **ENPM611 (Software Engineering)** projects.  
@@ -24,29 +23,28 @@ Each analyzer can be run independently or combined into a single summarized repo
 ---
 
 ## 🧱 Project Structure
-```
 
+```
 enpm611-project-group6/
 │
-├── config.json # Configuration file (data paths, parameters)
-├── run.py # Entry point for running analyses
+├── config.json                          # Configuration file (data paths, parameters)
+├── run.py                               # Entry point for running analyses
 │
-├── data_loader.py # Loads JSON-formatted GitHub issues
-├── model.py # Defines Issue, Event, and State data models
-├── config.py # Handles environment-based configuration
+├── data_loader.py                       # Loads JSON-formatted GitHub issues
+├── model.py                             # Defines Issue, Event, and State data models
+├── config.py                            # Handles environment-based configuration
 │
-├── contributor_activity_analyzer.py # Analyzer #1
-├── response_resolution_analyzer.py # Analyzer #2
-├── content_text_analyzer.py # Analyzer #3
-├── label_analyzer.py # Analyzer #4
+├── contributor_activity_analyzer.py     # Analyzer #1
+├── response_resolution_analyzer.py      # Analyzer #2
+├── content_text_analyzer.py             # Analyzer #3
+├── label_analyzer.py                    # Analyzer #4
 │
-├── pdf_report_exporter.py # Handles PDF generation with Unicode-safe fonts
+├── pdf_report_exporter.py               # Handles PDF generation with Unicode-safe fonts
 │
-├── requirements.txt # Python dependencies
+├── requirements.txt                     # Python dependencies
 └── data/
-└── poetry_issues.json # GitHub issues dataset
-
-````
+    └── poetry_issues.json               # GitHub issues dataset
+```
 
 ---
 
@@ -58,7 +56,7 @@ Fork this repository, then clone it locally:
 
 ```bash
 git clone https://github.com/DashRam64/enpm611-project-group6/tree/main
-````
+```
 
 Download the `poetry_issues.json` file from the assignment and place it under the `data/` folder.
 
@@ -259,7 +257,3 @@ python3 run.py --feature 1 --state open
 **Team:** ENPM611 Project Group 6  
 **Contributors:** Muhideen Mustapha, Gowri Mungath, Darshan Ram  
 **Institution:** University of Maryland, College Park
-
-```
-
-```

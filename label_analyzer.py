@@ -28,12 +28,40 @@ class LabelAnalyzer:
         if not kind_counts:
             print("⚠️ No kind/* labels to plot.")
             return None
-        labels = list(kind_counts.keys())
-        sizes  = list(kind_counts.values())
+
+        # Sort and group small slices into "Other"
+        labels, sizes = zip(*sorted(kind_counts.items(), key=lambda x: x[1], reverse=True))
+        total = sum(sizes)
+        labels_filtered, sizes_filtered = [], []
+        other_total = 0
+
+        for label, count in zip(labels, sizes):
+            if (count / total) < 0.03:  # labels under 3% get grouped
+                other_total += count
+            else:
+                labels_filtered.append(label)
+                sizes_filtered.append(count)
+
+        if other_total > 0:
+            labels_filtered.append("Other")
+            sizes_filtered.append(other_total)
+
         fig, ax = plt.subplots(figsize=(6, 6))
-        ax.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=90)
-        ax.set_title("Label Distribution: kind/*")
+        wedges, texts, autotexts = ax.pie(
+            sizes_filtered,
+            labels=labels_filtered,
+            autopct="%1.1f%%",
+            startangle=90,
+            pctdistance=0.85
+        )
+
+        # Improve look
+        centre_circle = plt.Circle((0, 0), 0.70, fc="white")
+        fig.gca().add_artist(centre_circle)
+        ax.axis("equal")
+        ax.set_title("Label Distribution: kind/* (Simplified)")
+
         fig.savefig(save_path, bbox_inches="tight")
         plt.close(fig)
-        print(f"🖼️ Label kind chart saved as {save_path}")
+        print(f"🖼️ Cleaned label kind chart saved as {save_path}")
         return save_path

@@ -89,25 +89,47 @@ class ContentTextAnalyzer:
         print(f"🖼️ Sentiment chart saved as {image_path}")
         return image_path
 
-    def plot_wordcloud(self, issues):
-        """Generate and save a word cloud of issue descriptions."""
-        all_text = " ".join((issue.get("text") or "") for issue in issues)
-        if not all_text.strip():
-            print("⚠️ No text found to generate word cloud.")
-            return
+        def plot_wordcloud(self, issues):
+            """Generate and save a filtered word cloud of issue descriptions."""
+            all_text = " ".join((issue.get("text") or "") for issue in issues)
+            if not all_text.strip():
+                print("⚠️ No text found to generate word cloud.")
+                return
 
-        wordcloud = WordCloud(width=800, height=400, background_color="white").generate(all_text)
-        plt.figure(figsize=(8, 4))
-        plt.imshow(wordcloud, interpolation="bilinear")
-        plt.axis("off")
-        plt.title("Word Cloud of Issue Descriptions")
+            # Custom stopwords for context filtering
+            custom_stopwords = {
+                "python", "python3", "package", "packages", "pip", "install", "import",
+                "file", "code", "error", "version", "https", "issue", "project",
+                "update", "module", "line", "function", "stack", "trace",
+                "requirement", "setup", "using", "build", "make", "add", "remove",
+                "fix", "problem", "application"
+            }
 
-        image_path = "wordcloud.png"
-        plt.savefig(image_path, bbox_inches="tight")
-        plt.show()
-        plt.close()
-        self.chart_paths.append(image_path)
-        print(f"🌥️ Word cloud saved as {image_path}")
+            from wordcloud import STOPWORDS
+            stopwords = STOPWORDS.union(custom_stopwords)
+
+            # Generate filtered word cloud
+            wordcloud = WordCloud(
+                width=800,
+                height=400,
+                background_color="white",
+                stopwords=stopwords,
+                max_words=150,
+                collocations=False
+            ).generate(all_text)
+
+            plt.figure(figsize=(8, 4))
+            plt.imshow(wordcloud, interpolation="bilinear")
+            plt.axis("off")
+            plt.title("Filtered Word Cloud of Issue Descriptions")
+
+            image_path = "wordcloud.png"
+            plt.savefig(image_path, bbox_inches="tight")
+            plt.show()
+            plt.close()
+            self.chart_paths.append(image_path)
+            print(f"🌥️ Word cloud saved as {image_path}")
+
 
     # -----------------------------
     #  PDF Report Generation

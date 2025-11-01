@@ -1,232 +1,109 @@
-# analysis/content_text_analyzer.py
 import re
 from collections import Counter
 from textblob import TextBlob
-from wordcloud import WordCloud
+from wordcloud import WordCloud, STOPWORDS
 import matplotlib.pyplot as plt
-from fpdf import FPDF
+from data_loader import DataLoader
+from pdf_report_exporter import PDFReportExporter
 import os
-
 
 class ContentTextAnalyzer:
     def __init__(self):
         self.report_data = {}
-        self.chart_paths = []  # tracks all saved chart images
+        self.chart_paths = []
 
-    # -----------------------------
-    #  Keyword and Error Extraction
-    # -----------------------------
+    def run(self):
+        issues = DataLoader().get_issues()
+        self.compute_sentiment_summary(issues)
+        self.plot_sentiment_categories()
+        self.plot_wordcloud(issues)
+        self.get_top_keywords(issues)
+        self.get_common_error_messages(issues)
+
     def get_top_keywords(self, issues, n=20):
-        all_text = " ".join((issue.get("text") or "") for issue in issues)
-        words = re.findall(r'\b[a-zA-Z]{3,}\b', all_text.lower())
+        all_text = " ".join(i.text or "" for i in issues)
+        words = re.findall(r"\b[a-zA-Z]{3,}\b", all_text.lower())
         freq = Counter(words).most_common(n)
         self.report_data["Top Keywords"] = freq
+        print("\n🔠 Top Keywords:")
+        for w, c in freq:
+            print(f"  {w}: {c}")
         return freq
 
     def get_common_error_messages(self, issues):
         errors = Counter()
         for issue in issues:
-            text = issue.get("text") or ""
-            for line in text.splitlines():
+            for line in (issue.text or "").splitlines():
                 if "error" in line.lower() or "exception" in line.lower():
                     errors[line.strip()] += 1
-        self.report_data["Common Errors"] = errors.most_common(10)
-        return dict(errors)
+        common_errors = errors.most_common(10)
+        self.report_data["Common Errors"] = common_errors
+        print("\n❗ Common Error Messages:")
+        for msg, count in common_errors:
+            print(f"  {msg[:100]} (x{count})")
+        return common_errors
 
-    # -----------------------------
-    #  Sentiment Summary
-    # -----------------------------
     def compute_sentiment_summary(self, issues):
-        """
-        Compute and classify sentiment polarity into Positive, Neutral, or Negative.
-        """
-        categories = {"Positive": 0, "Neutral": 0, "Negative": 0}
+        cats = {"Positive": 0, "Neutral": 0, "Negative": 0}
         for issue in issues:
-            text = issue.get("text") or ""
+            text = issue.text or ""
             try:
-                sentiment = TextBlob(text).sentiment.polarity
+                s = TextBlob(text).sentiment.polarity
             except Exception:
-                sentiment = 0.0
-
-            if sentiment > 0.1:
-                categories["Positive"] += 1
-            elif sentiment < -0.1:
-                categories["Negative"] += 1
+                s = 0
+            if s > 0.1:
+                cats["Positive"] += 1
+            elif s < -0.1:
+                cats["Negative"] += 1
             else:
-                categories["Neutral"] += 1
-
-        self.report_data["Sentiment Summary"] = categories
-        print("\n🪄 Sentiment Summary:", categories)
-        return categories
-
-    # -----------------------------
-    #  Visualization Helpers
-    # -----------------------------
-    def _save_plot_as_image(self, fig, filename):
-        """Save a matplotlib figure temporarily for embedding in PDF."""
-        fig.savefig(filename, bbox_inches="tight")
-        plt.close(fig)
-        return filename
+                cats["Neutral"] += 1
+        self.report_data["Sentiment Summary"] = cats
+        print("\n🪄 Sentiment Summary:")
+        for k, v in cats.items():
+            print(f"  {k}: {v}")
+        return cats
 
     def plot_sentiment_categories(self):
-        """Bar chart showing positive / neutral / negative sentiment."""
         summary = self.report_data.get("Sentiment Summary", {})
         if not summary:
             print("⚠️ No sentiment summary to plot.")
-            return None
-
-        labels = list(summary.keys())
-        sizes = list(summary.values())
+            return
         fig, ax = plt.subplots(figsize=(6, 4))
-        ax.bar(labels, sizes, color=["green", "gray", "red"])
+        ax.bar(summary.keys(), summary.values(), color=["green", "gray", "red"])
         ax.set_title("Sentiment Classification")
         ax.set_xlabel("Category")
         ax.set_ylabel("Number of Issues")
+        path = "sentiment_chart.png"
+        fig.savefig(path, bbox_inches="tight")
+        plt.show()
+        plt.close(fig)
+        self.chart_paths.append(path)
+        print(f"🖼️ Sentiment chart saved as {path}")
 
-        image_path = "sentiment_chart.png"
-        self._save_plot_as_image(fig, image_path)
-        self.chart_paths.append(image_path)
-        print(f"🖼️ Sentiment chart saved as {image_path}")
-        return image_path
+    def plot_wordcloud(self, issues):
+        all_text = " ".join(i.text or "" for i in issues)
+        if not all_text.strip():
+            print("⚠️ No text found to generate word cloud.")
+            return
+        stopwords = STOPWORDS.union({
+            "python", "python3", "package", "pip", "install", "error",
+            "project", "file", "function", "version"
+        })
+        wc = WordCloud(width=800, height=400, background_color="white", stopwords=stopwords)
+        wc.generate(all_text)
+        plt.figure(figsize=(8, 4))
+        plt.imshow(wc, interpolation="bilinear")
+        plt.axis("off")
+        path = "wordcloud.png"
+        plt.savefig(path, bbox_inches="tight")
+        plt.show()
+        plt.close()
+        self.chart_paths.append(path)
+        print(f"🌥️ Word cloud saved as {path}")
 
-        def plot_wordcloud(self, issues):
-            """Generate and save a filtered word cloud of issue descriptions."""
-            all_text = " ".join((issue.get("text") or "") for issue in issues)
-            if not all_text.strip():
-                print("⚠️ No text found to generate word cloud.")
-                return
-
-            # Custom stopwords for context filtering
-            custom_stopwords = {
-                "python", "python3", "package", "packages", "pip", "install", "import",
-                "file", "code", "error", "version", "https", "issue", "project",
-                "update", "module", "line", "function", "stack", "trace",
-                "requirement", "setup", "using", "build", "make", "add", "remove",
-                "fix", "problem", "application"
-            }
-
-            from wordcloud import STOPWORDS
-            stopwords = STOPWORDS.union(custom_stopwords)
-
-            # Generate filtered word cloud
-            wordcloud = WordCloud(
-                width=800,
-                height=400,
-                background_color="white",
-                stopwords=stopwords,
-                max_words=150,
-                collocations=False
-            ).generate(all_text)
-
-            plt.figure(figsize=(8, 4))
-            plt.imshow(wordcloud, interpolation="bilinear")
-            plt.axis("off")
-            plt.title("Filtered Word Cloud of Issue Descriptions")
-
-            image_path = "wordcloud.png"
-            plt.savefig(image_path, bbox_inches="tight")
-            plt.show()
-            plt.close()
-            self.chart_paths.append(image_path)
-            print(f"🌥️ Word cloud saved as {image_path}")
-
-
-    # -----------------------------
-    #  PDF Report Generation
-    # -----------------------------
     def export_report_pdf(self, filename="content_text_analysis_report.pdf"):
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=12)
-        pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.set_margins(left=15, top=15, right=15)
-
-        pdf.cell(200, 10, txt="Content/Text & Label Analysis Report", ln=True, align='C')
-        pdf.ln(10)
-
-        # 1️⃣ Sentiment Summary
-        summary = self.report_data.get("Sentiment Summary")
-        if summary:
-            pdf.set_font("Arial", "B", 12)
-            pdf.cell(0, 10, txt="Sentiment Summary", ln=True)
-            pdf.set_font("Arial", size=10)
-            for k, v in summary.items():
-                pdf.cell(0, 8, txt=f"{k}: {v}", ln=True)
-            pdf.ln(10)
-
-        # --- Image Embeds (sentiment chart, word cloud, label pie) ---
-        def add_image_if_present(path_substring, title):
-            for p in self.chart_paths:
-                if p and path_substring in p and os.path.exists(p):
-                    pdf.add_page()
-                    pdf.set_font("Arial", "B", 12)
-                    pdf.cell(0, 10, txt=title, ln=True)
-                    pdf.image(p, x=10, y=None, w=180)
-                    pdf.ln(10)
-
-        add_image_if_present("sentiment_chart", "Sentiment Classification Chart")
-        add_image_if_present("wordcloud", "Word Cloud")
-        add_image_if_present("label_kind_chart", "Label Distribution: kind/*")
-
-        # 4️⃣ Top Keywords
-        keywords = self.report_data.get("Top Keywords", [])
-        if keywords:
-            pdf.add_page()
-            pdf.set_font("Arial", "B", 12)
-            pdf.cell(0, 10, txt="Top Keywords", ln=True)
-            pdf.set_font("Arial", size=10)
-            for word, count in keywords:
-                pdf.cell(0, 8, txt=f"{word}: {count}", ln=True)
-            pdf.ln(10)
-
-        # 5️⃣ Common Errors
-        errors = self.report_data.get("Common Errors", [])
-        if errors:
-            pdf.add_page()
-            pdf.set_font("Arial", "B", 12)
-            pdf.cell(0, 10, txt="Common Errors", ln=True)
-            pdf.set_font("Arial", size=10)
-
-            def safe_write_error(msg, count):
-                """Safely write long or unprintable error lines to PDF."""
-                try:
-                    text = f"{msg} (Count: {count})"
-                    text = "".join(ch if 32 <= ord(ch) <= 126 else "?" for ch in text)
-                    text = re.sub(r"\s+", " ", text).strip()
-                    if len(text) > 400:
-                        text = text[:400] + "… [truncated]"
-                    if len(text) > 80:
-                        text = " ".join(text[i:i+80] for i in range(0, len(text), 80))
-                    pdf.multi_cell(0, 8, text, new_x="LMARGIN", new_y="NEXT")
-                except Exception:
-                    try:
-                        pdf.multi_cell(0, 8, "[Unprintable Error Line]")
-                    except Exception:
-                        pass
-
-            for msg, count in errors:
-                safe_write_error(msg, count)
-            pdf.ln(10)
-
-        # 6️⃣ Label Counts (tables)
-        for label_section in ["Label: Kind Counts", "Label: Area Counts"]:
-            data = self.report_data.get(label_section)
-            if data:
-                pdf.add_page()
-                pdf.set_font("Arial", "B", 12)
-                pdf.cell(0, 10, txt=label_section, ln=True)
-                pdf.set_font("Arial", size=10)
-                for k, v in data.items():
-                    pdf.cell(0, 8, txt=f"{k}: {v}", ln=True)
-                pdf.ln(8)
-
-        # --- Output and cleanup ---
-        pdf.output(filename)
-        print(f"✅ PDF report saved to {filename}")
-
-        for path in self.chart_paths:
-            try:
-                if path and os.path.exists(path):
-                    os.remove(path)
-            except Exception:
-                pass
+        PDFReportExporter("Content/Text Analysis Report").export(
+            self.report_data,
+            chart_paths=self.chart_paths,
+            filename=filename
+        )

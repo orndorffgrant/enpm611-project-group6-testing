@@ -1,16 +1,15 @@
 """
-Starting point of the application. This module is invoked from
-the command line to run the analyses.
+Starting point of the application.
 """
-
 import argparse
-import json
 from datetime import datetime
 
 import config
 from example_analysis import ExampleAnalysis
 from content_text_analyzer import ContentTextAnalyzer
 from label_analyzer import LabelAnalyzer
+from contributor_activity_analyzer import ContributorActivityAnalyzer
+from response_resolution_analyzer import ResponseResolutionAnalyzer
 
 
 def parse_args():
@@ -18,33 +17,35 @@ def parse_args():
     ap = argparse.ArgumentParser("run.py")
 
     ap.add_argument('--feature', '-f', type=int, required=True,
-                    help='Which of the three features to run')
+                    help='Which feature to run (1–5)')
+    ap.add_argument('--start_date', type=str, required=False,
+                    help='Start date (YYYY-MM-DD)')
+    ap.add_argument('--end_date', type=str, required=False,
+                    help='End date (YYYY-MM-DD)')
     ap.add_argument('--label', '-l', type=str, required=False,
                     help='Optional label filter')
-    ap.add_argument('--start_date', type=str, required=False,
-                    help='Start date for filtering issues (YYYY-MM-DD)')
-    ap.add_argument('--end_date', type=str, required=False,
-                    help='End date for filtering issues (YYYY-MM-DD)')
     ap.add_argument('--state', type=str, required=False,
                     help='Filter by issue state (open or closed)')
     return ap.parse_args()
 
 
 def interactive_mode():
-    """Interactive input to choose feature and filters."""
-    print("\n=== 🧠 Interactive Analyzer Runner ===")
-    print("1️⃣  Content/Text Analysis")
-    print("2️⃣  Label Analysis")
-    print("3️⃣  Combined Report")
+    """Interactive selection of feature and optional filters."""
+    print("\n=== Interactive Analyzer Runner ===")
+    print("1️⃣  Contributor Activity Analysis")
+    print("2️⃣  Response & Resolution Analysis")
+    print("3️⃣  Content/Text Analysis")
+    print("4️⃣  Label Analysis")
+    print("5️⃣  Combined Report (All Analyses)")
 
     while True:
         try:
-            feature = int(input("Enter choice (1-3): ").strip())
-            if feature in [1, 2, 3]:
+            feature = int(input("Enter choice (1–5): ").strip())
+            if feature in [1, 2, 3, 4, 5]:
                 break
         except ValueError:
             pass
-        print("Invalid input. Please enter 1, 2, or 3.")
+        print("Invalid input. Please enter 1–5.")
 
     start_date = input("Start date (YYYY-MM-DD) or leave blank: ").strip()
     end_date = input("End date (YYYY-MM-DD) or leave blank: ").strip()
@@ -53,45 +54,18 @@ def interactive_mode():
 
     start_date = datetime.fromisoformat(start_date) if start_date else None
     end_date = datetime.fromisoformat(end_date) if end_date else None
-    label = label if label else None
-    state = state if state else None
 
     return {
         "feature": feature,
         "start_date": start_date,
         "end_date": end_date,
-        "label": label,
-        "state": state
+        "label": label or None,
+        "state": state or None
     }
 
 
-def filter_issues(issues, start_date=None, end_date=None, label=None, state=None):
-    """Filters loaded issues by date, label, or state."""
-    filtered = []
-    for issue in issues:
-        created = None
-        if issue.get("created_date"):
-            try:
-                created = datetime.fromisoformat(issue["created_date"])
-            except ValueError:
-                pass
-
-        if start_date and created and created < start_date:
-            continue
-        if end_date and created and created > end_date:
-            continue
-        if label and label not in issue.get("labels", []):
-            continue
-        if state and issue.get("state") != state:
-            continue
-        filtered.append(issue)
-
-    print(f"\n✅ Filtered down to {len(filtered)} issues.")
-    return filtered
-
-
 if __name__ == "__main__":
-    # Ask if user wants interactive mode
+    # Interactive or non-interactive mode
     mode = input("Run in interactive mode? (y/n): ").strip().lower()
 
     if mode == "y":
@@ -101,71 +75,69 @@ if __name__ == "__main__":
         args = parse_args()
         config.overwrite_from_args(args)
 
-    # Load dataset
-    with open("data/poetry_issues.json", "r") as f:
-        issues = json.load(f)
+    feature = args.feature
 
-    # Filter
-    filtered_issues = filter_issues(
-        issues,
-        start_date=args.start_date,
-        end_date=args.end_date,
-        label=args.label,
-        state=args.state
-    )
+    # --- Run the selected analyzer(s) ---
+    if feature == 1:
+        print("\n👥 Running Contributor Activity Analysis...")
+        analyzer = ContributorActivityAnalyzer()
+        analyzer.run()
+        print("\n✅ Contributor Activity Analysis Complete.")
 
-    # --- Run selected feature ---
-    if args.feature == 1:
+    elif feature == 2:
+        print("\n🕒 Running Response & Resolution Analysis...")
+        analyzer = ResponseResolutionAnalyzer()
+        analyzer.run()
+        print("\n✅ Response & Resolution Analysis Complete.")
+
+    elif feature == 3:
         print("\n🧠 Running Content/Text Analysis...")
         analyzer = ContentTextAnalyzer()
-        analyzer.compute_sentiment_summary(filtered_issues)
-        analyzer.plot_sentiment_categories()
-        analyzer.plot_wordcloud(filtered_issues)
-        analyzer.get_top_keywords(filtered_issues)
-        analyzer.get_common_error_messages(filtered_issues)
-        analyzer.export_report_pdf("content_text_analysis_report.pdf")
+        analyzer.run()
+        print("\n✅ Content/Text Analysis Complete.")
 
-    elif args.feature == 2:
+    elif feature == 4:
         print("\n🏷️ Running Label Analysis...")
         analyzer = LabelAnalyzer()
-        kind_labels = analyzer.analyze_kind_labels(filtered_issues)
-        area_labels = analyzer.analyze_area_labels(filtered_issues)
-        analyzer.plot_kind_label_pie_chart(kind_labels)
-        print("\n✅ Label analysis complete.")
+        analyzer.run()
+        print("\n✅ Label Analysis Complete.")
 
-    elif args.feature == 3:
-        print("\n📊 Running Combined Report...")
+    elif feature == 5:
+        print("\n📊 Running Combined Report (All Analyses)...")
+
+        # Sequentially run all analyzers
+        ca = ContributorActivityAnalyzer()
+        rra = ResponseResolutionAnalyzer()
         cta = ContentTextAnalyzer()
-        la  = LabelAnalyzer()
+        la = LabelAnalyzer()
 
-        # --- Content/Text Analysis ---
-        cta.compute_sentiment_summary(filtered_issues)
-        cta.plot_sentiment_categories()
-        cta.plot_wordcloud(filtered_issues)
-        cta.get_top_keywords(filtered_issues)
-        cta.get_common_error_messages(filtered_issues)
+        # Each analyzer loads data via DataLoader
+        ca.run()
+        rra.run()
+        cta.run()
+        la.run()
 
-        # --- Label Analysis & chart ---
-        try:
-            kind_counts = la.analyze_kind_labels(filtered_issues)
-            area_counts = la.analyze_area_labels(filtered_issues)
-            kind_chart  = la.plot_kind_label_pie_chart(kind_counts, save_path="label_kind_chart.png")
-        except Exception as e:
-            print(f"⚠️ Label analysis skipped due to error: {e}")
-            kind_counts, area_counts, kind_chart = {}, {}, None
+        # Merge results for the unified PDF
+        combined_report = cta.report_data.copy()
+        combined_report.update({
+            "Contributor Activity": getattr(ca, "report_data", {}),
+            "Response & Resolution": getattr(rra, "report_data", {}),
+            "Label: Kind Counts": la.report_data.get("Label: Kind Counts", {}),
+            "Label: Area Counts": la.report_data.get("Label: Area Counts", {})
+        })
 
-        # Merge label tables into the same report_data
-        if kind_counts:
-            cta.report_data["Label: Kind Counts"] = dict(kind_counts)
-        if area_counts:
-            cta.report_data["Label: Area Counts"] = dict(area_counts)
-        # Attach label chart image so it will be embedded
-        if kind_chart:
-            cta.chart_paths.append(kind_chart)
+        # Combine chart images
+        all_charts = []
+        for a in [ca, rra, cta, la]:
+            if hasattr(a, "chart_paths"):
+                all_charts.extend(a.chart_paths)
 
-        # --- Export unified PDF ---
-        cta.export_report_pdf("combined_analysis_report.pdf")
-        print("\n✅ Combined analysis report generated as combined_analysis_report.pdf")
+        # Export unified PDF
+        from pdf_report_exporter import PDFReportExporter
+        PDFReportExporter("Combined Project Analysis Report").export(
+            combined_report, chart_paths=all_charts, filename="combined_analysis_report.pdf"
+        )
+        print("\n✅ Combined Analysis Report Generated as combined_analysis_report.pdf")
 
     else:
-        print("⚠️ Please specify a valid feature (1-3).")
+        print("⚠️ Invalid feature selected (choose 1–5).")

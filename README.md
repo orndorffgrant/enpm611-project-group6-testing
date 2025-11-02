@@ -88,11 +88,6 @@ Install all project requirements:
 pip install -r requirements.txt
 ```
 
-If you encounter Unicode issues with PDFs, ensure you have DejaVuSans or Arial Unicode MS installed:
-
-- **macOS**: `/Library/Fonts/Arial Unicode.ttf`
-- **Linux**: `/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf`
-
 ---
 
 ## 🧭 Usage

@@ -123,7 +123,8 @@ if __name__ == "__main__":
             "Contributor Activity": getattr(ca, "report_data", {}),
             "Response & Resolution": getattr(rra, "report_data", {}),
             "Label: Kind Counts": la.report_data.get("Label: Kind Counts", {}),
-            "Label: Area Counts": la.report_data.get("Label: Area Counts", {})
+            "Label: Area Counts": la.report_data.get("Label: Area Counts", {}), 
+            "Label: Prefix Breakdown": la.report_data.get("Label: Prefix Breakdown", {})
         })
 
         # Combine chart images

@@ -53,7 +53,6 @@ class PDFReportExporter:
             # Fallback to built-in Arial
             pdf.set_font("Arial", size=12)
 
-        # ...existing code...
         pdf.cell(0, 10, txt=self.title, ln=True, align="C")
         pdf.ln(10)
 

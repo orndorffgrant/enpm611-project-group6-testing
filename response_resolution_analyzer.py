@@ -20,10 +20,6 @@ class ResponseResolutionAnalyzer:
         response_times = self.get_first_response_times(issues)
         resolution_times = self.get_resolution_times(issues)
 
-        # Save data for reporting
-        self.report_data["Response Times (hours)"] = response_times
-        self.report_data["Resolution Times (hours)"] = resolution_times
-
         self.print_summary_statistics(response_times, resolution_times)
         self.plot_response_time_histogram(response_times)
         self.plot_response_vs_resolution_scatter(response_times, resolution_times)
@@ -59,18 +55,37 @@ class ResponseResolutionAnalyzer:
 
     def print_summary_statistics(self, response_times, resolution_times):
         def summary(title, data):
+            stats_dict = {}
             print(f"\n--- {title} ---")
             if not data:
                 print("No data available.")
-                return
+                stats_dict["Info"] = "No data available."
+                return stats_dict
+
             arr = np.array(list(data.values()))
-            print(f"Count: {len(arr)}")
-            print(f"Mean: {np.mean(arr):.2f} hrs")
-            print(f"Median: {np.median(arr):.2f} hrs")
-            print(f"Min: {np.min(arr):.2f} hrs")
-            print(f"Max: {np.max(arr):.2f} hrs")
-        summary("Response Time Summary", response_times)
-        summary("Resolution Time Summary", resolution_times)
+            count = len(arr)
+            mean = np.mean(arr)
+            median = np.median(arr)
+            min_val = np.min(arr)
+            max_val = np.max(arr)
+
+            print(f"Count: {count}")
+            print(f"Mean: {mean:.2f} hrs")
+            print(f"Median: {median:.2f} hrs")
+            print(f"Min: {min_val:.2f} hrs")
+            print(f"Max: {max_val:.2f} hrs")
+
+            stats_dict["Count"] = int(count)
+            stats_dict["Mean (hrs)"] = round(float(mean), 2)
+            stats_dict["Median (hrs)"] = round(float(median), 2)
+            stats_dict["Min (hrs)"] = round(float(min_val), 2)
+            stats_dict["Max (hrs)"] = round(float(max_val), 2)
+
+            return stats_dict
+
+        self.report_data["Response Time Summary"] = summary("Response Time Summary", response_times)
+        self.report_data["Resolution Time Summary"] = summary("Resolution Time Summary", resolution_times)
+
 
     def plot_response_time_histogram(self, response_times, bins=None):
         if not response_times:

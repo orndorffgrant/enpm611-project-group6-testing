@@ -88,6 +88,29 @@ Install all project requirements:
 pip install -r requirements.txt
 ```
 
+### 4. Set Environment Variable
+
+**macOS/Linux:**
+
+```bash
+export ENPM611_PROJECT_DATA_PATH=/path/to/your/poetry_issues.json  # replace with your actual path
+```
+
+**Windows (PowerShell):**
+
+```bash
+$env:ENPM611_PROJECT_DATA_PATH="C:\path\to\your\poetry_issues.json" # replace with your actual path
+```
+
+**Windows (Command Prompt):**
+
+```bash
+set ENPM611_PROJECT_DATA_PATH="C:\path\to\your\poetry_issues.json" # replace with your actual path
+```
+
+
+
+
 ---
 
 ## 🧭 Usage

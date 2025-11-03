@@ -99,13 +99,13 @@ export ENPM611_PROJECT_DATA_PATH=/path/to/your/poetry_issues.json  # replace wit
 **Windows (PowerShell):**
 
 ```bash
-$env:ENPM611_PROJECT_DATA_PATH="C:\path\to\your\poetry_issues.json" # replace with your actual path
+$env:ENPM611_PROJECT_DATA_PATH=C:\path\to\your\poetry_issues.json # replace with your actual path
 ```
 
 **Windows (Command Prompt):**
 
 ```bash
-set ENPM611_PROJECT_DATA_PATH="C:\path\to\your\poetry_issues.json" # replace with your actual path
+set ENPM611_PROJECT_DATA_PATH=C:\path\to\your\poetry_issues.json # replace with your actual path
 ```
 
 

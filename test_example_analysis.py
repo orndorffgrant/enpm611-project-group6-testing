@@ -1,7 +1,7 @@
 import unittest
 from unittest import mock
 from example_analysis import ExampleAnalysis
-from testhelpers import TestDataLoader, MOCK_ISSUES_BASIC
+from test_helpers import TestDataLoader, MOCK_ISSUES_BASIC
 
 class TestExampleAnalysis(unittest.TestCase):
     @mock.patch("example_analysis.plt.show")

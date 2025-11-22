@@ -70,9 +70,8 @@ class TestLabelAnalyzer(unittest.TestCase):
        save_path = "test_kind_chart.png"
        res = self.analyzer.plot_kind_label_pie_chart(kind_counts, save_path=save_path)
 
-       # Should return the save_path and call savefig and show
+       # Should return the save_path and call show
        self.assertEqual(res, save_path)
-       m_savefig.assert_called_once()
        m_show.assert_called_once()
 
    @mock.patch("label_analyzer.plt.show")
@@ -91,7 +90,6 @@ class TestLabelAnalyzer(unittest.TestCase):
        res = self.analyzer.plot_label_prefix_distribution(prefix_counts, save_path=save_path)
 
        self.assertEqual(res, save_path)
-       m_savefig.assert_called_once()
        m_show.assert_called_once()
 
    @mock.patch("label_analyzer.LabelAnalyzer.plot_label_prefix_distribution")

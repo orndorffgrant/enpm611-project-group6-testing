@@ -117,10 +117,22 @@ class TestResponseResolutionAnalyzer(unittest.TestCase):
 
     def test_resolution_times_missing_created_date_is_buggy(self):
         updated = datetime.now()
-        issue = DummyIssue(99, created_date=None, updated_date=updated, state="closed")
+        issue = DummyIssue(
+            99,
+            created_date=None,  # missing
+            updated_date=updated,
+            state="closed"
+        )
 
-        with self.assertRaises(Exception):
-            self.analyzer.get_resolution_times([issue]) # Should crash → BUG
+        result = self.analyzer.get_resolution_times([issue])
+
+        # BUG: Closed issue should still be accounted for,
+        # not silently ignored or dropped from results.
+        self.assertIn(
+            issue.number,
+            result,
+            "BUG: Missing created_date should not cause closed issues to disappear from resolution metrics"
+        )
 
     def test_print_summary_statistics_invalid_data_is_buggy(self):
         self.analyzer.print_summary_statistics({1: None}, {})  # Should crash → BUG

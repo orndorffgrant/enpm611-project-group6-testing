@@ -83,7 +83,7 @@ class TestIssue(unittest.TestCase):
 
     def test_issue_from_json_assignees_should_parse_logins(self):
         """
-        BUG: Assignees should be usernames, not list of dicts.
+        BUG: The type of Issue.assignee is String[], implying assignees should be usernames, not list of dicts.
         """
         jobj = {
             "url": "https://example.com/issues/99",

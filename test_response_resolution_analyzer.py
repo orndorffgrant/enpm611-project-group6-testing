@@ -27,8 +27,6 @@ class TestResponseResolutionAnalyzer(unittest.TestCase):
 
         self.analyzer = ResponseResolutionAnalyzer()
 
-    # --- Existing Good Tests ---
-
     def test_get_first_response_times_basic(self):
         created = datetime(2024, 11, 1, 10, 0, 0)
         events = [
@@ -117,17 +115,15 @@ class TestResponseResolutionAnalyzer(unittest.TestCase):
         self.analyzer.run()
         mock_summary.assert_called_once()
 
-    # --- New Failing Tests to Expose Additional Bugs ---
-
     def test_resolution_times_missing_created_date_is_buggy(self):
         updated = datetime.now()
         issue = DummyIssue(99, created_date=None, updated_date=updated, state="closed")
 
         with self.assertRaises(Exception):
-            self.analyzer.get_resolution_times([issue]) 
+            self.analyzer.get_resolution_times([issue]) # Should crash → BUG
 
     def test_print_summary_statistics_invalid_data_is_buggy(self):
-        self.analyzer.print_summary_statistics({1: None}, {})  
+        self.analyzer.print_summary_statistics({1: None}, {})  # Should crash → BUG
 
 
 if __name__ == "__main__":

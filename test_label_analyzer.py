@@ -10,7 +10,6 @@ from collections import Counter
 import label_analyzer
 from label_analyzer import LabelAnalyzer
 
-# reuse helpers from test_helpers.py module
 from test_helpers import TestDataLoader, mock_issue, MOCK_ISSUES_BASIC
 
 class TestLabelAnalyzer(unittest.TestCase):

@@ -60,7 +60,7 @@ class DataLoaderTests(unittest.TestCase):
                 # Issue called once during first load
                 self.assertEqual(m_issue.call_count, 1)
 
-                # Call again; because of caching, Issue should not be called again
+                # Call again; Issue should not be called again because of cacheing
                 m_issue.reset_mock()
                 second = dl.get_issues()
                 m_issue.assert_not_called()
